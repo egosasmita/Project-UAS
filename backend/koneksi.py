@@ -1,23 +1,24 @@
 import mysql.connector
-from mysql.connector import errorcode
+from mysql.connector import Error
 
-db_config = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '',
-    'database': 'lensart_shop'
-}
-
-def get_db_connection():
-    """Membuka koneksi baru ke database MySQL."""
+def get_connection():
     try:
-        conn = mysql.connector.connect(**db_config)
-        return conn
-    except mysql.connector.Error as err:
-        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-            print("Username atau password database salah")
-        elif err.errno == errorcode.ER_BAD_DB_ERROR:
-            print(f"Database '{db_config['database']}' tidak ditemukan")
-        else:
-            print(f"Error koneksi DB: {err}")
+        connection = mysql.connector.connect(
+            host='localhost',
+            database='lensart_shop',
+            user='root',
+            password=''
+        )
+        
+        if connection.is_connected():
+            return connection
+            
+    except Error as e:
+        print(f"Error saat menghubungkan ke MySQL: {e}")
         return None
+
+if __name__ == '__main__':
+    conn = get_connection()
+    if conn:
+        print("Koneksi berhasil!")
+        conn.close()

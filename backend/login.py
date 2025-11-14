@@ -1,47 +1,45 @@
 import bcrypt
-import mysql.connector
+from backend.koneksi import get_connection
+from mysql.connector import Error
 
-from . import koneksi
+def login_user(username_or_email, password):
+    conn = get_connection()
+    if conn is None:
+        return None
 
-def check_password(stored_hashed_password, provided_password):
-    if isinstance(stored_hashed_password, str):
-        stored_hashed_password = stored_hashed_password.encode('utf-8')
-        
-    return bcrypt.checkpw(provided_password.encode('utf-8'), stored_hashed_password)
-
-def login_user(email, password):
-
-    if not (email and password):
-        return "Email dan Password wajib diisi!"
-        
-    conn = None
-    cursor = None
     try:
-        conn = koneksi.get_db_connection()
-        if conn is None:
-            return "Gagal terhubung ke database."
+        cursor = conn.cursor(dictionary=True) 
+        
+        query = """
+        SELECT * FROM users 
+        WHERE username = %s OR email = %s
+        """
+        
+        cursor.execute(query, (username_or_email, username_or_email))
+        user = cursor.fetchone()
 
-        cursor = conn.cursor()
-        query = "SELECT password FROM users WHERE email = %s"
-        cursor.execute(query, (email,))
-        
-        user_row = cursor.fetchone() 
-        
-        if user_row:
-            stored_hashed_password = user_row[0] 
-            
-            # 2. Periksa password
-            if check_password(stored_hashed_password, password):
-                return "Login berhasil!"
+        if user:
+            stored_password_hash = user['PASSWORD'].encode('utf-8')
+            input_password = password.encode('utf-8')
+
+            if bcrypt.checkpw(input_password, stored_password_hash):
+                print(f"Login berhasil untuk user: {user['username']}")
+                
+                user.pop('PASSWORD', None) 
+                
+                return user
             else:
-                return "Email atau Password salah."
+                print("Login gagal: Password salah.")
+                return None
         else:
-            return "Email atau Password salah."
-            
-    except mysql.connector.Error as err:
-        return f"Terjadi error saat login: {err}"
+            print("Login gagal: User tidak ditemukan.")
+            return None
+
+    except Error as e:
+        print(f"Error saat proses login: {e}")
+        return None
+        
     finally:
-        if cursor:
+        if conn.is_connected():
             cursor.close()
-        if conn:
             conn.close()
