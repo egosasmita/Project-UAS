@@ -3,8 +3,8 @@ from backend.koneksi import get_connection
 from mysql.connector import Error
 
 def register_user(username, email, password, alamat, tipe_user):
-    if tipe_user not in ['pembeli', 'penjual']:
-        print("Error: Tipe user tidak valid. Harus 'pembeli' atau 'penjual'.")
+    if tipe_user not in ['Pembeli', 'Penjual']:
+        print("Error: Tipe user tidak valid.")
         return False
 
     conn = get_connection()
